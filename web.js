@@ -3,9 +3,15 @@ var fs = require('fs');
 var app = express.createServer(express.logger());
 
 app.get('/', function(request, response) {
-	file = fs.readFileSync('index.html');
+	var content;
+	file = fs.readFileSync('index.html',function read(err,data) {
+		if(err) {
+			throw err;
+		}
+		content = data;
+	});
 	buf = new Buffer(27);
-	buf.write(file);
+	buf.write(content);
   response.send(buf.toString());
 });
 
