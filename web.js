@@ -10,9 +10,9 @@ app.get('/', function(request, response) {
 		}
 		content = data;
 	});
-	console.log(content);
+	log(content);
 	buf = new Buffer(27);
-	buf.write(content);
+	//buf.write(content);
   response.send(buf.toString());
 });
 
