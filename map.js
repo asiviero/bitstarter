@@ -39,14 +39,14 @@ function initialize() {
       }
 google.maps.event.addDomListener(window, 'load', initialize);
 
-var socket = io.connect('http://desolate-fortress-2124.herokuapp.com/');
+var socket = io.connect('http://desolate-fortress-2124.herokuapp.com');
 socket.on('news', function (data) {
   console.log(data);
   socket.emit('my other event', { my: 'data' });
 });
-socket.on('message', function(data) {
+/*socket.on('message', function(data) {
 	window.alert('Ola Denis!');
-})
+});*/
 
 /*if (google.loader.ClientLocation != null) {
   alert(google.loader.ClientLocation.address.city);
