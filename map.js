@@ -39,7 +39,7 @@ function initialize() {
       }
 google.maps.event.addDomListener(window, 'load', initialize);
 
-var socket = io.connect('http://desolate-fortress-2124.herokuapp.com:'+process.env.PORT+'/');
+var socket = io.connect('http://desolate-fortress-2124.herokuapp.com/');
 socket.on('news', function (data) {
   console.log(data);
   socket.emit('my other event', { my: 'data' });
