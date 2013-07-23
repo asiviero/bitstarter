@@ -2,7 +2,7 @@ var map;
 function initialize() {
 	
         var mapOptions = {
-          center: new google.maps.LatLng(geoip_latitude(),geoip_longitude()),
+          //center: new google.maps.LatLng(geoip_latitude(),geoip_longitude()),
           zoom: 13,
           mapTypeId: google.maps.MapTypeId.ROADMAP
         };
@@ -39,7 +39,7 @@ function initialize() {
       }
 google.maps.event.addDomListener(window, 'load', initialize);
 
-var socket = io.connect('http://ec2-54-213-75-113.us-west-2.compute.amazonaws.com:8080');
+var socket = io.connect('http://localhost');
 socket.on('news', function (data) {
   console.log(data);
   socket.emit('my other event', { my: 'data' });
@@ -53,7 +53,7 @@ socket.on('message', function(data) {
 } else {
   alert("Not found");
 }*/
-console.log(new google.maps.LatLng(geoip_latitude(),geoip_longitude()));
+//console.log(new google.maps.LatLng(geoip_latitude(),geoip_longitude()));
 
 function showLocation(position) {
 	  var latitude = position.coords.latitude;
