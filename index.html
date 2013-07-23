@@ -101,7 +101,7 @@
     
     <script src="/socket.io/socket.io.js"></script>
 <script>
-  var socket = io.connect('http://desolate-fortress-2124.herokuapp.com/');
+  var socket = io.connect('http://desolate-fortress-2124.herokuapp.com:'+process.env.PORT+'/');
   socket.on('news', function (data) {
     console.log(data);
     socket.emit('my other event', { my: 'data' });
