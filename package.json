@@ -3,7 +3,6 @@
   "version": "0.0.1",
   
   "dependencies": {
-    "node-waf": "1.6.4",
     "express": "2.5.11", 
     "socket.io": "0.9.16",
     "socket": "0.0.1",
