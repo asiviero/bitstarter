@@ -44,9 +44,9 @@ socket.on('news', function (data) {
   console.log(data);
   socket.emit('my other event', { my: 'data' });
 });
-/*socket.on('message', function(data) {
+socket.on('message', function(data) {
 	window.alert('Ola Denis!');
-});*/
+});
 
 /*if (google.loader.ClientLocation != null) {
   alert(google.loader.ClientLocation.address.city);
