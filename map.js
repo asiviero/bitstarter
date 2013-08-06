@@ -47,7 +47,7 @@ google.maps.event.addDomListener(window, 'load', initialize);
 }
 app.listen(port);*/
 
-if(document.domain.search("heroku") != -1) {
+if(document.domain.search("heroku") == -1) {
 	port = ":"+port;
 } else {
 	port = "";
