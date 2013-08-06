@@ -3,6 +3,11 @@ var fs = require('fs');
 var http = require('http');
 var app = express.createServer(express.logger());
 app.use(express.static(__dirname));
+var hat = require('hat');
+
+var id = hat();
+
+var connected = new Array();
 //var io = require('socket.io');
 
 //Start the server at port 8080
@@ -63,17 +68,22 @@ app.get('/map', function(request, response) {
 	//response.render('map.html');
 });
 
-var port = process.env.PORT || 8080 ;
+
 app.listen(port, function() {
   console.log("Listening on " + port);
 });*/
 
 var app = require('http').createServer(handler)
 , io = require('socket.io').listen(app)
-, fs = require('fs')
+, fs = require('fs');
 
 //app.listen(8080);
-app.listen(process.env.PORT || 8080);
+if(process) {
+	var port = process.env.PORT || 8080 ;
+} else {
+	port = 8080;
+}
+app.listen(port);
 
 function handler (req, res) {
 	if(req.url == "/") {
@@ -95,16 +105,28 @@ function handler (req, res) {
 }
 
 io.sockets.on('connection', function (socket) {
-	socket.emit('news', { hello: 'world' });
+	rack_id = hat();
+	//socket.emit('news', { hello: 'world', rack_id: rack_id });
+	
+	socket.emit('news', { hello: 'world', rack_id: rack_id });
+	socket.on('broadcast',function(data) {
+		console.log("Broadcasting" + connected.length);		
+		connected.forEach(function(value) {						
+			value.emit('new_pin',data);
+		});
+	});
+	connected.push(socket);
+	console.log("Length: " + connected.length);
 	/*socket.on('my other event', function (data) {
 		console.log(data);
 	});*/
-	socket.on('message',function(event){
+	/*socket.on('message',function(event){
         console.log('Received message from client! ',event);
         if(event == 'Ola Zubat!') {
         	socket.emit('message','Ola!');
         }
-	});
+	});*/
+	//console.log(connected[rack_id]);
 	
 });
 

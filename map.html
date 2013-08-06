@@ -104,6 +104,9 @@
     <script src="http://j.maxmind.com/app/geoip.js" language="javascript"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script type="text/javascript"
+      src="environment.js">
+    </script>
+    <script type="text/javascript"
       src="map.js">
     </script>
 </head>
@@ -116,6 +119,8 @@
       <form>
      <input type="button" onclick="getLocation();"  
                              value="Get Location"/>
+     <input type="button" onclick="shareLocation();"  
+                             value="Share Location"/>
    </form>
     </div>
     <div class="span10">

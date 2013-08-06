@@ -1,4 +1,5 @@
 var map;
+var initialLocation;
 function initialize() {
 	
         var mapOptions = {
@@ -39,13 +40,34 @@ function initialize() {
       }
 google.maps.event.addDomListener(window, 'load', initialize);
 
-var socket = io.connect('http://desolate-fortress-2124.herokuapp.com/');
+/*if(process) {
+	var port = process.env.PORT || 8080 ;
+} else {
+	port = 8080;
+}
+app.listen(port);*/
+
+
+var socket = io.connect('http://'+document.domain+':'+port);
 socket.on('news', function (data) {
   console.log(data);
   socket.emit('my other event', { my: 'data' });
 });
 socket.on('message', function(data) {
 	window.alert('Ola Denis!');
+});
+socket.on('new_pin',function(data) {
+	console.log("New pin to be added at" + data.coords.latitude + data.coords.longitude);
+	var latitude = data.coords.latitude;
+	var longitude = data.coords.longitude;
+	//alert("Latitude : " + latitude + " Longitude: " + longitude);
+	map.setCenter(new google.maps.LatLng(latitude,longitude));
+	console.log(map);
+	var marker = new google.maps.Marker({
+		position: new google.maps.LatLng(latitude,longitude),
+		map: map,
+		title: 'Hello World!'
+	});
 });
 
 /*if (google.loader.ClientLocation != null) {
@@ -56,34 +78,50 @@ socket.on('message', function(data) {
 //console.log(new google.maps.LatLng(geoip_latitude(),geoip_longitude()));
 
 function showLocation(position) {
-	  var latitude = position.coords.latitude;
-	  var longitude = position.coords.longitude;
-	  //alert("Latitude : " + latitude + " Longitude: " + longitude);
-	  map.setCenter(new google.maps.LatLng(latitude,longitude));
-	  console.log(map);
-	  var marker = new google.maps.Marker({
-          position: new google.maps.LatLng(latitude,longitude),
-          map: map,
-          title: 'Hello World!'
-      });
-	}
+	var latitude = position.coords.latitude;
+	var longitude = position.coords.longitude;
+	//alert("Latitude : " + latitude + " Longitude: " + longitude);
+	map.setCenter(new google.maps.LatLng(latitude,longitude));
+	console.log(map);
+	var marker = new google.maps.Marker({
+		position: new google.maps.LatLng(latitude,longitude),
+		map: map,
+		title: 'Hello World!'
+	});
+}
 
-	function errorHandler(err) {
-	  if(err.code == 1) {
-	    alert("Error: Access is denied!");
-	  }else if( err.code == 2) {
-	    alert("Error: Position is unavailable!");
-	  }
+function errorHandler(err) {
+	if(err.code == 1) {
+		alert("Error: Access is denied!");
+	}else if( err.code == 2) {
+		alert("Error: Position is unavailable!");
 	}
-	function getLocation(){
+}
+function getLocation(){
 
-	   if(navigator.geolocation){
-	      // timeout at 60000 milliseconds (60 seconds)
-	      var options = {timeout:60000};
-	      navigator.geolocation.getCurrentPosition(showLocation, 
-	                                               errorHandler,
-	                                               options);
-	   }else{
-	      alert("Sorry, browser does not support geolocation!");
-	   }
+	if(navigator.geolocation){
+		// timeout at 60000 milliseconds (60 seconds)
+		var options = {timeout:60000};
+		navigator.geolocation.getCurrentPosition(showLocation, 
+				errorHandler,
+				options);
+	}else{
+		alert("Sorry, browser does not support geolocation!");
 	}
+}
+
+function shareLocation() {
+	if(navigator.geolocation){
+		// timeout at 60000 milliseconds (60 seconds)
+		var options = {timeout:60000};
+		navigator.geolocation.getCurrentPosition(sendLocation, 
+				errorHandler,
+				options);
+	}else{
+		alert("Sorry, browser does not support geolocation!");
+	}
+}
+
+function sendLocation(position) {
+	socket.emit('broadcast',position);
+}
