@@ -47,8 +47,12 @@ google.maps.event.addDomListener(window, 'load', initialize);
 }
 app.listen(port);*/
 
-
-var socket = io.connect('http://'+document.domain+':'+port);
+if(document.domain.search("heroku") != -1) {
+	port = ":"+port;
+} else {
+	port = "";
+}
+var socket = io.connect('http://'+document.domain+port);
 socket.on('news', function (data) {
   console.log(data);
   socket.emit('my other event', { my: 'data' });
