@@ -16,12 +16,12 @@ var app = require('http').createServer(handler)
 , fs = require('fs');
 
 //app.listen(8080);
-require('./environment');
-/*if(conn_string.search("heroku") == -1) {
-	port = 8080;
+//require('./environment');
+if(process) {
+	var port = process.env.PORT || 8080;
 } else {
 	port = 80;
-}*/
+}
 
 /*if(process) {
 	var port = process.env.PORT || 8080 ;

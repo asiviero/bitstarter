@@ -6,7 +6,7 @@ var initialLocation;
 } else {
 	port = "";
 }*/
-var socket = io.connect('http://desolate-fortress-2124.herokuapp.com');
+var socket = io.connect(conn_string);
 console.log(conn_string);
 var connected = {};
 var rack_id;
