@@ -19,7 +19,7 @@ var app = require('http').createServer(handler)
 if(process) {
 	var port = process.env.PORT || 8080 ;
 } else {
-	port = 8080;
+	port = 80;
 }
 app.listen(port);
 
