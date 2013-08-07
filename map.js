@@ -8,7 +8,7 @@ var initialLocation;
 }*/
 
 if(document.domain.search("heroku") == -1) {
-	port = ":"+port;
+	port = ":"+8080;
 } else {
 	port = "";
 }
