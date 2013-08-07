@@ -5,3 +5,4 @@ if(typeof process == 'undefined') {
 }
 
 var conn_string = 'http://desolate-fortress-2124.herokuapp.com/';
+global.conn_string = conn_string;
