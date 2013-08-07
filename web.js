@@ -28,7 +28,7 @@ if(process) {
 } else {
 	port = 8080;
 }*/
-app.listen(80);
+app.listen(port);
 
 function handler (req, res) {
 	if(req.url == "/") {
