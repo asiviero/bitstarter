@@ -6,7 +6,7 @@ if(document.domain.search("heroku") == -1) {
 } else {
 	port = "";
 }
-var socket = io.connect('http://'+document.domain+port);
+var socket = io.connect(conn_string);
 var connected = {};
 var rack_id;
 
@@ -14,6 +14,7 @@ socket.on('init_msg', function (data) {
 	console.log(data);
 	//socket.emit('my other event', { my: 'data' });
 	rack_id = data.rack_id;
+	
 	initialize();
 });
 socket.on('new_pin',function(data) {
@@ -110,24 +111,24 @@ function getLocation(){
 
 var broadcast_function = function sendLocation(position) {
 	socket.emit('broadcast',{rack_id: rack_id, pos: position});
-}
+};
 
 var report_function = function reportLocation(position) {
 	console.log("Pos: " + position);
 	socket.emit('report',{rack_id: rack_id, pos: position});
-}
+};
 
 var message_to_server = {
 		"REPORT" : report_function,
 		"BROADCAST" : broadcast_function
-	}	
+};
 
 function shareLocation(method) {
 	if(navigator.geolocation){
 		// timeout at 60000 milliseconds (60 seconds)
 		var options = {timeout:60000};
 		console.log("Method " + method);
-		console.log("Typeof " + typeof message_to_server[method])
+		console.log("Typeof " + typeof message_to_server[method]);
 		console.log(message_to_server[method]);
 		navigator.geolocation.getCurrentPosition(message_to_server[method], 
 				errorHandler,
@@ -149,7 +150,7 @@ function initialize() {
             mapOptions);
         //console.log(new google.maps.LatLng(geoip_latitude(),geoip_longitude()));
 
-        //console.log("Pasou");
+        console.log("Passou");
         //console.log(navigator);
         if(navigator.geolocation) {
         	browserSupportFlag = true;
