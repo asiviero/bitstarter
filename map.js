@@ -6,8 +6,16 @@ var initialLocation;
 } else {
 	port = "";
 }*/
-var socket = io.connect(conn_string);
-console.log(conn_string);
+
+if(document.domain.search("heroku") == -1) {
+	port = ":"+port;
+} else {
+	port = "";
+}
+/*var socket = io.connect(conn_string);
+console.log(conn_string);*/
+var socket = io.connect('http://'+document.domain+port);
+console.log('http://'+document.domain+port);
 var connected = {};
 var rack_id;
 
