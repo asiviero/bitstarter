@@ -81,7 +81,7 @@ var app = require('http').createServer(handler)
 if(process) {
 	var port = process.env.PORT || 8080 ;
 } else {
-	port = 8080;
+	port = 80;
 }
 app.listen(port);
 
@@ -129,26 +129,3 @@ io.sockets.on('connection', function (socket) {
 	//console.log(connected[rack_id]);
 	
 });
-
-//Create a Socket.IO instance, passing it our server
-/*var socket = io.sockets.listen(app);
-
-// Add a connect listener
-socket.on('connection', function(client){ 
-    console.log("server is start on port 8080");
-
-    // Create periodical which ends a message to the client every 5 seconds
-    var interval = setInterval(function() {
-        client.send('This is a message from the server!  ' + new Date().getTime());
-    },5000);
-
-    // Success!  Now listen to messages to be received
-    client.on('message',function(event){
-        console.log('Received message from client! ',event);
-    });
-    client.on('disconnect',function(){
-        clearInterval(interval);
-        console.log('Server has disconnected');
-    });
-
-})*/;
