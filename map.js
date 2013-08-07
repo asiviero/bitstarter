@@ -1,5 +1,11 @@
 var map;
 var initialLocation;
+
+if(document.domain.search("heroku") == -1) {
+	port = ":"+port;
+} else {
+	port = "";
+}
 var socket = io.connect('http://'+document.domain+port);
 var connected = {};
 var rack_id;
@@ -40,11 +46,7 @@ socket.on('remove_pin',function(data) {
 
 
 
-if(document.domain.search("heroku") == -1) {
-	port = ":"+port;
-} else {
-	port = "";
-}
+
 /*var socket = io.connect('http://'+document.domain+port);
 socket.on('news', function (data) {
   console.log(data);
