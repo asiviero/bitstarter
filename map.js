@@ -1,12 +1,13 @@
 var map;
 var initialLocation;
 
-if(document.domain.search("heroku") == -1) {
+/*if(document.domain.search("heroku") == -1) {
 	port = ":"+port;
 } else {
 	port = "";
-}
+}*/
 var socket = io.connect(conn_string);
+console.log(conn_string);
 var connected = {};
 var rack_id;
 
