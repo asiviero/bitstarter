@@ -1,5 +1,5 @@
 {
-  "name": "node-example",
+  "name": "triptracker",
   "version": "0.0.1",
   
   "dependencies": {
@@ -7,10 +7,11 @@
     "socket.io": "0.9.16",
     "socket": "0.0.1",
     "commander" : "1.2.0",
-    "hat" : "0.0.3"
+    "hat" : "0.0.3",
+    "dict" : "1.4.0"
   },
   "engines": {
-    "node": "0.8.x",
+    "node": "0.8.21",
     "npm": "1.1.x"
   }
 }
