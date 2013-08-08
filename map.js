@@ -46,7 +46,7 @@ socket.on('new_pin',function(data) {
 		connected[data.rack_id] = marker;
 	} else {
 		console.log("Pin is already here! Updating its position");
-		connected[data.rack_id].position = new google.maps.LatLng(latitude,longitude); 
+		connected[data.rack_id].setPosition(new google.maps.LatLng(latitude,longitude)); 
 	}
 });
 socket.on('remove_pin',function(data) {
