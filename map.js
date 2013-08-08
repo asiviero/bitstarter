@@ -11,6 +11,7 @@
 var map; 
 //Object that works as an associative array to identify users uniquely. Contains
 //Marker objects
+var markers = {};
 var connected = {};
 //An unique identifier to each user logged into the application, determined
 //by the server
@@ -49,26 +50,66 @@ socket.on('new_pin',function(data) {
 	map.setCenter(new google.maps.LatLng(latitude,longitude));
 
 	// Check if a pin with such rack_id exists
-	if(!connected[data.rack_id]) {
-		// If it doesn't, create a marker and append it to connected
+	if(!markers[data.rack_id]) {
+		// If it doesn't, create a marker and append it to markers
 		var marker = new google.maps.Marker({
 			position: new google.maps.LatLng(latitude,longitude),
 			map: map,
 			title: 'Hello World!', // TODO change this				
 		});
-		connected[data.rack_id] = marker;
+		markers[data.rack_id] = marker;
 	} else {
 		// If it exists, update its position
-		connected[data.rack_id].setPosition(new google.maps.LatLng(latitude,longitude)); 
+		markers[data.rack_id].setPosition(new google.maps.LatLng(latitude,longitude));
+		markers[data.rack_id].setMap(map);
 	}
 });
+
+// Refresh "Currently Online" List
+socket.on('new_user',function (data) {
+	if(!connected[data.rack_id]) {
+		connected[data.rack_id] = data;
+	}
+	$('#currently-online-list').html("");
+	var _list = "";
+	for (rack_id in connected) {
+		_list += "<li>" + rack_id + "</li>";		
+	}
+	$('#currently-online-list').html(_list);
+
+});
+
+socket.on('remove_user',function(data) {
+	console.log(connected);
+	if(connected[data.rack_id]) {
+		delete connected[data.rack_id];
+	}
+	console.log(connected);
+	$('#currently-online-list').html("");
+	var _list = "";
+	for (rack_id in connected) {
+		_list += "<li>" + rack_id + "</li>";		
+	}
+	$('#currently-online-list').html(_list);
+
+});
+
+socket.on('update_user_list', function(data) {
+	$('#currently-online-list').html("");
+	var _list = "";
+	/*for (rack_id in data) {
+		_list += "<li>" + rack_id + "</li>";		
+	}
+	$('#currently-online-list').html(_list);*/	
+});
+
 
 //A 'remove_pin' message will send a rack_id of a pin to be removed from the
 //map
 socket.on('remove_pin',function(data) {
-	if(connected[data.rack_id]) {
-		connected[data.rack_id].setMap(null);
-		connected[data.rack_id] = null; // This is important !
+	if(markers[data.rack_id]) {
+		markers[data.rack_id].setMap(null);
+		markers[data.rack_id] = null; // This is important !
 	}
 });
 
