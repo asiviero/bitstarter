@@ -57,6 +57,22 @@ io.sockets.on('connection', function (socket) {
 	if(!connected.has(rack_id)) {
 		connected.set(rack_id,socket);
 	}
+	// Broadcast new user online
+	connected.forEach(function(value) {
+		//console.log(JSON.stringfy(connected));
+		
+		// Hack to emit new user to everyone
+		/*connected.forEach(function(value_in) {
+			value.emit('new_user',{value_in: rack_id});
+		})*/
+		console.log("Here " + connected.size);
+		
+		connected.forEach(function(value_in,key) {
+			value.emit('new_user',{rack_id: key});
+		});
+	});
+	
+	//socket.emit('update_user_list',{conn: connected});
 	
 	// Handlers
 	socket.on('broadcast',function(data) {	
@@ -70,7 +86,8 @@ io.sockets.on('connection', function (socket) {
 	});	
 	socket.on('disconnect', function(data) {
 		connected.forEach(function(value) {						
-			value.emit('remove_pin',{rack_id : socket.rack_id});			
+			value.emit('remove_pin',{rack_id : socket.rack_id});
+			value.emit('remove_user',{rack_id : socket.rack_id});
 		});		
 		connected.delete(socket.rack_id);
 	});
