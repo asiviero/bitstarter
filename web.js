@@ -1,3 +1,10 @@
+/*
+ * web.js
+ * 
+ * server-side scripting, will run on a node.js platform. It uses hat to token
+ * generation and dict to keep track of users logged in
+ */
+
 var express = require('express');
 var fs = require('fs');
 var http = require('http');
@@ -6,8 +13,7 @@ app.use(express.static(__dirname));
 var hat = require('hat');
 var dict = require('dict');
 
-
-var id = hat();
+// A dictionary to keep track of users
 var connected = new dict();
 
 var app = require('http').createServer(handler)
@@ -45,43 +51,27 @@ function handler (req, res) {
 
 io.sockets.on('connection', function (socket) {
 	rack_id = hat();
-	//socket.emit('news', { hello: 'world', rack_id: rack_id });
-	socket.rack_id = rack_id;
+	// Upon connection, send back a init_msg to client
 	socket.emit('init_msg', {rack_id: socket.rack_id });	
 	if(!connected.has(rack_id)) {
 		connected.set(rack_id,socket);
 	}
-	console.log("Length: " + connected.size + " ");
+	
+	// Handlers
 	socket.on('broadcast',function(data) {	
-		console.log("Broadcasting " + connected.length + " from " + data.rack_id);		
 		connected.forEach(function(value) {						
 			value.emit('new_pin',{pos: data.pos, rack_id: data.rack_id});
 		});
 	});
 	socket.on('report', function(data) {
-		console.log("Report received");
 		socket = connected.get(data.rack_id);
 		socket.emit('new_pin',{pos: data.pos, rack_id: socket.rack_id});
-		//socket.emit('new_pin',{pos: data.pos, rack_id: rack_id});
 	});	
 	socket.on('disconnect', function(data) {
 		connected.forEach(function(value) {						
 			value.emit('remove_pin',{rack_id : socket.rack_id});			
-		});
-		
+		});		
 		connected.delete(socket.rack_id);
-		console.log("Length: " + connected.size + " ");
 	});
 
-	/*socket.on('my other event', function (data) {
-		console.log(data);
-	});*/
-	/*socket.on('message',function(event){
-        console.log('Received message from client! ',event);
-        if(event == 'Ola Zubat!') {
-        	socket.emit('message','Ola!');
-        }
-	});*/
-	//console.log(connected[rack_id]);
-	
 });
