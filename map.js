@@ -1,103 +1,77 @@
-var map;
-var initialLocation;
+/*
+ * map.js
+ * 
+ * client-side scripting, this file is responsible for both the map displaying
+ * and the communication with the server. It defines the websocket connection,
+ * its handlers and generates the map. It has a couple of global vars whose
+ * usage are detailed near them
+ */
 
-/*if(document.domain.search("heroku") == -1) {
-	port = ":"+port;
-} else {
-	port = "";
-}*/
+//Map object from google maps
+var map; 
+//Object that works as an associative array to identify users uniquely. Contains
+//Marker objects
+var connected = {};
+//An unique identifier to each user logged into the application, determined
+//by the server
+var rack_id;
 
+//Setting up the socket connection, this has a bit of hacky feeling since I could
+//not manage to deploy to Heroku and Amazon EC2 without code modification on which
+//port to connect, which would be unsuitable. If you find a good way to do this, 
+//please let me know.
 if(document.domain.search("heroku") == -1) {
 	port = ":"+8080;
 } else {
 	port = "";
 }
-/*var socket = io.connect(conn_string);
-console.log(conn_string);*/
 var socket = io.connect('http://'+document.domain+port);
-console.log('http://'+document.domain+port);
-var connected = {};
-var rack_id;
 
+//After socket is created and connected, it awaits for a message from the server
+//I opted to initialize the map only after all this because it would be easier
+//to use pre-existing function and messages to add markers to the map. Also, google
+//maps run asynchronously, which makes parallel processing a constant and sometimes
+//not desirable.
 socket.on('init_msg', function (data) {
-	console.log(data);
-	//socket.emit('my other event', { my: 'data' });
-	rack_id = data.rack_id;
-	
+	// Init msg is a set up event, it will set this user rack_id and then, initialize
+	// the map. More details on initialize later
+	rack_id = data.rack_id;	
 	initialize();
 });
+
+//When the server sends a 'new_pin' message, it wants to either insert a new pin
+//to this user map or update a pin's position. data will consist of the desired
+//pin's rack_id and its new location as latitude and longitude 
 socket.on('new_pin',function(data) {
-	console.log(data);
-	console.log("New pin to be added at" + data.pos.coords.latitude + " " + data.pos.coords.longitude + " under id " + data.rack_id);
 	var latitude = data.pos.coords.latitude;
 	var longitude = data.pos.coords.longitude;
-	//alert("Latitude : " + latitude + " Longitude: " + longitude);
+	// Focus on new pin
 	map.setCenter(new google.maps.LatLng(latitude,longitude));
-	//console.log(map);
-	console.log(connected);
 
+	// Check if a pin with such rack_id exists
 	if(!connected[data.rack_id]) {
+		// If it doesn't, create a marker and append it to connected
 		var marker = new google.maps.Marker({
 			position: new google.maps.LatLng(latitude,longitude),
 			map: map,
-			title: 'Hello World!',
-				
+			title: 'Hello World!', // TODO change this				
 		});
 		connected[data.rack_id] = marker;
 	} else {
-		console.log("Pin is already here! Updating its position");
+		// If it exists, update its position
 		connected[data.rack_id].setPosition(new google.maps.LatLng(latitude,longitude)); 
 	}
 });
+
+//A 'remove_pin' message will send a rack_id of a pin to be removed from the
+//map
 socket.on('remove_pin',function(data) {
-	console.log("Removing pin at id: " + data.rack_id);
 	if(connected[data.rack_id]) {
 		connected[data.rack_id].setMap(null);
-		connected[data.rack_id] = null;
-	} else {console.log("Pin is not at map!");}
+		connected[data.rack_id] = null; // This is important !
+	}
 });
 
-
-
-
-/*var socket = io.connect('http://'+document.domain+port);
-socket.on('news', function (data) {
-  console.log(data);
-  socket.emit('my other event', { my: 'data' });
-});
-socket.on('new_pin',function(data) {
-	console.log("New pin to be added at" + data.pos.coords.latitude + data.pos.coords.longitude);
-	var latitude = data.pos.coords.latitude;
-	var longitude = data.pos.coords.longitude;
-	//alert("Latitude : " + latitude + " Longitude: " + longitude);
-	map.setCenter(new google.maps.LatLng(latitude,longitude));
-	console.log(map);
-	var marker = new google.maps.Marker({
-		position: new google.maps.LatLng(latitude,longitude),
-		map: map,
-		title: 'Hello World!'
-	});
-});*/
-
-/*if (google.loader.ClientLocation != null) {
-  alert(google.loader.ClientLocation.address.city);
-} else {
-  alert("Not found");
-}*/
-//console.log(new google.maps.LatLng(geoip_latitude(),geoip_longitude()));
-
-function showLocation(position) {
-	var latitude = position.coords.latitude;
-	var longitude = position.coords.longitude;
-	//alert("Latitude : " + latitude + " Longitude: " + longitude);
-	map.setCenter(new google.maps.LatLng(latitude,longitude));
-	console.log(map);
-	var marker = new google.maps.Marker({
-		position: new google.maps.LatLng(latitude,longitude),
-		map: map,
-		title: 'Hello World!'
-	});
-}
 
 function errorHandler(err) {
 	if(err.code == 1) {
@@ -106,42 +80,30 @@ function errorHandler(err) {
 		alert("Error: Position is unavailable!");
 	}
 }
-function getLocation(){
 
-	if(navigator.geolocation){
-		// timeout at 60000 milliseconds (60 seconds)
-		var options = {timeout:60000};
-		navigator.geolocation.getCurrentPosition(showLocation, 
-				errorHandler,
-				options);
-	}else{
-		alert("Sorry, browser does not support geolocation!");
-	}
-}
-
-
-
+//An aux function, will ask the server to broadcast user position
 var broadcast_function = function sendLocation(position) {
 	socket.emit('broadcast',{rack_id: rack_id, pos: position});
 };
 
+//Reports its current position to the server. Server currently responds
+//with a new_pin message
 var report_function = function reportLocation(position) {
-	console.log("Pos: " + position);
 	socket.emit('report',{rack_id: rack_id, pos: position});
 };
 
+//An enum to make it easiear to shareLocation
 var message_to_server = {
 		"REPORT" : report_function,
 		"BROADCAST" : broadcast_function
 };
 
+//The main communication function. It will fetch the user position and, according
+//to method, send a proper message to the server
 function shareLocation(method) {
 	if(navigator.geolocation){
 		// timeout at 60000 milliseconds (60 seconds)
 		var options = {timeout:60000};
-		console.log("Method " + method);
-		console.log("Typeof " + typeof message_to_server[method]);
-		console.log(message_to_server[method]);
 		navigator.geolocation.getCurrentPosition(message_to_server[method], 
 				errorHandler,
 				options);
@@ -150,36 +112,22 @@ function shareLocation(method) {
 	}
 }
 
-function initialize() {
-	
-	//while(!rack_id);
-        var mapOptions = {
-          //center: new google.maps.LatLng(geoip_latitude(),geoip_longitude()),
-          zoom: 13,
-          mapTypeId: google.maps.MapTypeId.ROADMAP
-        };
-        map = new google.maps.Map(document.getElementById("google-map"),
-            mapOptions);
-        //console.log(new google.maps.LatLng(geoip_latitude(),geoip_longitude()));
+//Map initialization, as simple as it gets and very similar from Google "Hello World"
+//This one will also fetch user position and report it to the server
+function initialize() {	
+	var mapOptions = {
+			zoom: 13,
+			mapTypeId: google.maps.MapTypeId.ROADMAP
+	};
+	map = new google.maps.Map(document.getElementById("google-map"),
+			mapOptions);
+	if(navigator.geolocation) {
+		browserSupportFlag = true;
+		shareLocation("REPORT");    	        	    
+	}
+	else {
+		browserSupportFlag = false;
+		handleNoGeolocation(browserSupportFlag);
+	}
 
-        console.log("Passou");
-        //console.log(navigator);
-        if(navigator.geolocation) {
-        	browserSupportFlag = true;
-        	shareLocation("REPORT");    	        	    
-    	  }
-        else {
-        	console.log("Aq3");
-            browserSupportFlag = false;
-            handleNoGeolocation(browserSupportFlag);
-          }
-
-      }
-//google.maps.event.addDomListener(window, 'load', initialize);
-
-/*if(process) {
-	var port = process.env.PORT || 8080 ;
-} else {
-	port = 8080;
 }
-app.listen(port);*/
