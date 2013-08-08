@@ -52,6 +52,7 @@ function handler (req, res) {
 io.sockets.on('connection', function (socket) {
 	rack_id = hat();
 	// Upon connection, send back a init_msg to client
+	socket.rack_id = rack_id;
 	socket.emit('init_msg', {rack_id: socket.rack_id });	
 	if(!connected.has(rack_id)) {
 		connected.set(rack_id,socket);
