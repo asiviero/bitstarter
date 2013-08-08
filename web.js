@@ -8,7 +8,6 @@ var dict = require('dict');
 
 
 var id = hat();
-
 var connected = new dict();
 
 var app = require('http').createServer(handler)
