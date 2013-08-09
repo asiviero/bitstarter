@@ -172,3 +172,61 @@ function initialize() {
 	}
 
 }
+
+route_markers = new Array();
+// Route set up events
+$(document).ready(function() {
+	$('#new-route-button').click(function() {
+		console.log("Clicked");
+		var route_block = "<div id='route-panel'>" +
+		"<h3>Route:</h3>" +
+		"<div class='route-pin-block'>Origin: <span class='route-pin-location'></span> <span class='glyphicon glyphicon-home'></span><span class='glyphicon glyphicon-plus-sign'></span></div>" +
+		/*"<div id='route-pin-block-checkpoint-block'></div>" +*/
+		"<div class='route-pin-block'>Destination: <span class='route-pin-location'></span> <span class='glyphicon glyphicon-flag'></span><span class='glyphicon glyphicon-plus-sign'></span></div>" +
+		"<div class='button' id='add-checkpoint-button'>Add Checkpoint</div>" +		
+		"<div id='route-status-msg'></div>" +		
+		"</div>";
+		$('#new-route-panel').html(route_block);
+		
+		$('.route-pin-block .glyphicon-plus-sign').click(function() {
+			var index = $(this).parent().index() - 1;			
+			console.log(index);
+			$('#route-status-msg').text("Click on map to insert pin");
+			
+			google.maps.event.addListenerOnce(map,"click",function(event) {
+				google.maps.event.clearListeners(map, 'click');
+				$('#route-status-msg').text("");
+				if(event.latLng) {
+					
+					var lat = event.latLng.lb;
+					var lng = event.latLng.mb;										
+					var marker = new google.maps.Marker({
+						position: new google.maps.LatLng(lat,lng),
+						draggable: true,
+						map:map,						
+					});
+					
+					$('.route-pin-block:eq('+index+') .route-pin-location').text(event.latLng.lat()+' / '+event.latLng.lng());
+					
+					google.maps.event.addListener(marker, 'drag', function(event) {
+					  $('.route-pin-block:eq('+index+') .route-pin-location').text(event.latLng.lat()+' / '+event.latLng.lng());
+					});
+					 
+					google.maps.event.addListener(marker, 'dragend', function(event) {
+						$('.route-pin-block:eq('+index+') .route-pin-location').text(event.latLng.lat()+' / '+event.latLng.lng());
+					});
+					
+					route_markers[index] = marker;
+				}
+			})
+		});
+		
+		$('#add-checkpoint-button').click(function() {
+			nCheckpoints = $('.route-pin-block').length-2;
+			var div_to_append = "<div class='route-pin-block'>Checkpoint "+(nCheckpoints+1)+": <span class='route-pin-location'></span> <span class='glyphicon glyphicon-flag'></span><span class='glyphicon glyphicon-plus-sign'></span></div>";
+			$('.route-pin-block:last').before(div_to_append);
+		});
+		
+		$('#new-route-button').remove();	
+	});
+});

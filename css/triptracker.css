@@ -1,0 +1,11 @@
+.button {
+	padding: 5px;
+	border: 1px solid black;
+}
+.glyphicon {
+	margin: 0 10px;
+}
+#google-map img {
+  max-width:none;
+}
+

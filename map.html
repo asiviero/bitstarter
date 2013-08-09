@@ -12,6 +12,8 @@
     <link href="http://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700,300italic,400italic,500italic,700italic" rel="stylesheet" type="text/css">
     <link href="http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,300,400,600,700,800" 
           rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-glyphicons.css">
+    <link rel="stylesheet" type="text/css" href="css/triptracker.css">    
     <style type="text/css">
 
       /* Large desktop */
@@ -104,9 +106,6 @@
     <script src="http://j.maxmind.com/app/geoip.js" language="javascript"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script type="text/javascript"
-      src="environment.js">
-    </script>
-    <script type="text/javascript"
       src="map.js">
     </script>
 </head>
@@ -126,8 +125,13 @@
         <h2>Currently online:</h2>
         <div id="currently-online-names">
           <ul id="currently-online-list">
-
+            <!-- Online people list will be rendered here -->
           </ul>
+        </div>
+     </div>
+     <div id="new-route-block">
+        <div class="button" id="new-route-button">Set Up Route</div>
+        <div id="new-route-panel">
         </div>
      </div>
     </div>
