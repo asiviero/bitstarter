@@ -75,9 +75,10 @@ io.sockets.on('connection', function (socket) {
 	//socket.emit('update_user_list',{conn: connected});
 	
 	// Handlers
-	socket.on('broadcast',function(data) {	
+	socket.on('broadcast',function(data) {
+		console.log('Connected size: ' + connected.size);
 		connected.forEach(function(value) {						
-			value.emit('new_pin',{pos: data.pos, rack_id: data.rack_id});
+			value.emit('new_pin',{pos: data.pos, rack_id: socket.rack_id});
 		});
 	});
 	socket.on('report', function(data) {
