@@ -177,7 +177,6 @@ route_markers = new Array();
 // Route set up events
 $(document).ready(function() {
 	$('#new-route-button').click(function() {
-		console.log("Clicked");
 		var route_block = "<div id='route-panel'>" +
 		"<h3>Route:</h3>" +
 		"<div class='route-pin-block'>Origin: <span class='route-pin-location'></span> <span class='glyphicon glyphicon-home'></span><span class='glyphicon glyphicon-plus-sign'></span></div>" +
@@ -189,10 +188,13 @@ $(document).ready(function() {
 		$('#new-route-panel').html(route_block);
 		
 		_set_plus_sign_listeners();
+		//_set_minus_sign_listeners();
 		
 		$('#add-checkpoint-button').click(function() {
 			_update_route_panel("NEW_CHECKPOINT");
 		});
+		
+		
 		
 		$('#new-route-button').remove();	
 	});
@@ -203,7 +205,7 @@ function _update_route_panel(action,index) {
 		// Find how many checkpoints exist (nCheckpoints)
 		nCheckpoints = route_markers.length-2;
 		// New checkpoint will have index nCheckpoints+1
-		var div_to_append = "<div class='route-pin-block'>Checkpoint "+(nCheckpoints+1)+": <span class='route-pin-location'></span> <span class='glyphicon glyphicon-flag'></span><span class='glyphicon glyphicon-plus-sign'></span></div>";
+		var div_to_append = "<div class='route-pin-block'>Checkpoint <span class='checkpoint-index'>"+(nCheckpoints+1)+"</span>: <span class='route-pin-location'></span> <span class='glyphicon glyphicon-flag'></span><span class='glyphicon glyphicon-plus-sign'></span><span class='glyphicon glyphicon-minus-sign'></span></div>";
 		// Insert right before "Destination"
 		$('.route-pin-block:last').before(div_to_append);
 		// Update "Destination handlers"
@@ -222,7 +224,37 @@ function _update_route_panel(action,index) {
 		});
 		// Update plus sign listeners
 		_set_plus_sign_listeners();
+		_set_minus_sign_listeners();
 	}
+	else if(action == "REMOVE_CHECKPOINT") {
+		console.log("REMOVE_CHECKPOINT ON INDEX" + index);
+		// Remove element on index provided
+		$('.route-pin-block:eq('+index+')').remove();
+		// Readjust listeners
+		_set_plus_sign_listeners();
+		_set_minus_sign_listeners();
+		// Update route_markers 
+		route_markers[index].setMap(null);
+		for(i = index; i < route_markers.length; i++) {
+			route_markers[i] = route_markers[i+1];
+			_set_up_drag_events(i);
+			_update_checkpoint_index();
+		}
+	}
+}
+
+function _set_up_drag_events(index) {
+	marker = route_markers[index];
+	google.maps.event.clearListeners(marker, 'drag');
+	google.maps.event.clearListeners(marker, 'dragend');
+	google.maps.event.addListener(marker, 'drag', function(event) {
+		  $('.route-pin-block:eq('+index+') .route-pin-location').text(event.latLng.lat()+' / '+event.latLng.lng());
+		});
+		 
+		google.maps.event.addListener(marker, 'dragend', function(event) {
+			$('.route-pin-block:eq('+index+') .route-pin-location').text(event.latLng.lat()+' / '+event.latLng.lng());
+		});
+
 }
 
 function _set_up_click_listeners(index) {
@@ -241,15 +273,17 @@ function _set_up_click_listeners(index) {
 			
 			$('.route-pin-block:eq('+index+') .route-pin-location').text(event.latLng.lat()+' / '+event.latLng.lng());
 			
-			google.maps.event.addListener(marker, 'drag', function(event) {
+			/*google.maps.event.addListener(marker, 'drag', function(event) {
 			  $('.route-pin-block:eq('+index+') .route-pin-location').text(event.latLng.lat()+' / '+event.latLng.lng());
 			});
 			 
 			google.maps.event.addListener(marker, 'dragend', function(event) {
 				$('.route-pin-block:eq('+index+') .route-pin-location').text(event.latLng.lat()+' / '+event.latLng.lng());
-			});
-			
+			});*/
 			route_markers[index] = marker;
+			_set_up_drag_events(index);
+			
+			
 		}
 	});
 }
@@ -260,5 +294,23 @@ function _set_plus_sign_listeners() {
 		console.log(index);
 		$('#route-status-msg').text("Click on map to insert pin");
 		_set_up_click_listeners(index);			
+	});	
+}
+
+function _update_checkpoint_index() {
+	$('.checkpoint-index').each(function(){
+		var index = $(this).parent().index() - 1;
+		$(this).text(index);
+	});
+}
+
+function _set_minus_sign_listeners() {	
+	$('.route-pin-block .glyphicon-minus-sign').unbind("click");
+	$('.route-pin-block .glyphicon-minus-sign').click(function() {
+		var index = $(this).parent().index() - 1;			
+		console.log(index);
+		//$('#route-status-msg').text("Click on map to insert pin");
+		//_set_up_click_listeners(index);
+		_update_route_panel("REMOVE_CHECKPOINT", index);
 	});	
 }
