@@ -182,7 +182,8 @@ $(document).ready(function() {
 		"<div class='route-pin-block'>Origin: <span class='route-pin-location'></span> <span class='glyphicon glyphicon-home'></span><span class='glyphicon glyphicon-plus-sign'></span></div>" +
 		/*"<div id='route-pin-block-checkpoint-block'></div>" +*/
 		"<div class='route-pin-block'>Destination: <span class='route-pin-location'></span> <span class='glyphicon glyphicon-flag'></span><span class='glyphicon glyphicon-plus-sign'></span></div>" +
-		"<div class='button' id='add-checkpoint-button'>Add Checkpoint</div>" +		
+		"<div class='button' id='add-checkpoint-button'>Add Checkpoint</div>" +
+		"<div class='button' id='ask-google-for-route'>Ask Google</div>" +		
 		"<div id='route-status-msg'></div>" +		
 		"</div>";
 		$('#new-route-panel').html(route_block);
@@ -194,7 +195,9 @@ $(document).ready(function() {
 			_update_route_panel("NEW_CHECKPOINT");
 		});
 		
-		
+		$('#ask-google-for-route').click(function() {
+			ask_google_for_route();
+		});
 		
 		$('#new-route-button').remove();	
 	});
@@ -269,21 +272,10 @@ function _set_up_click_listeners(index) {
 				position: new google.maps.LatLng(lat,lng),
 				draggable: true,
 				map:map,						
-			});
-			
+			});			
 			$('.route-pin-block:eq('+index+') .route-pin-location').text(event.latLng.lat()+' / '+event.latLng.lng());
-			
-			/*google.maps.event.addListener(marker, 'drag', function(event) {
-			  $('.route-pin-block:eq('+index+') .route-pin-location').text(event.latLng.lat()+' / '+event.latLng.lng());
-			});
-			 
-			google.maps.event.addListener(marker, 'dragend', function(event) {
-				$('.route-pin-block:eq('+index+') .route-pin-location').text(event.latLng.lat()+' / '+event.latLng.lng());
-			});*/
 			route_markers[index] = marker;
 			_set_up_drag_events(index);
-			
-			
 		}
 	});
 }
@@ -314,3 +306,92 @@ function _set_minus_sign_listeners() {
 		_update_route_panel("REMOVE_CHECKPOINT", index);
 	});	
 }
+
+var directionsService = new google.maps.DirectionsService();
+
+/*
+ * Route related functions
+ * Upon the markers provided by user, use Google Directions API to generate a route
+ * After "Ask Google for Route", we search for the pins specified by the user, 
+ * stored in route_marks and send the route to Directions API. After route genration,
+ * route_marks may be destroyed
+ */
+var route_object;
+var rendererOptions = {
+		draggable: true
+};
+
+function ask_google_for_route() {
+
+	
+	var directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);
+	//var route_object = {};
+	var start = route_markers[0].position;
+	var end = route_markers[route_markers.length-1].position;
+	console.log(start);
+	console.log(end);
+	directionsDisplay.setMap(map);
+
+	var waypoints_array = new Array();
+	for (i = 1; i <= route_markers.length-2; i++) {
+		waypoints_array.push({location: route_markers[i].position});
+	}
+	console.log(waypoints_array);
+	var request = {
+			origin:start,
+			destination:end,
+			waypoints: waypoints_array,
+			travelMode: google.maps.DirectionsTravelMode.DRIVING
+	};
+	directionsService.route(request, function(response, status) {
+		console.log(response);
+		if (status == google.maps.DirectionsStatus.OK) {
+			console.log(response);
+			route_object = response;
+			console.log(route_object);
+			directionsDisplay.setDirections(response);
+			$('#route-panel').append("<div class='button' id='broadcast_route'>Broadcast route</div>")
+			$('#broadcast_route').click(function(){
+				socket.emit('broadcast_route',{rack_id: rack_id, route: route_object});
+			});
+			//return route_object;
+		}
+	});
+
+	google.maps.event.addListener(directionsDisplay, 'directions_changed', function() {
+		route_object = directionsDisplay.directions;
+	});	  
+}
+
+socket.on('new_route',function(data){
+	console.log("Setting up new route from: " + data.rack_id);
+	var directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);
+	directionsDisplay.setMap(map);
+	//directionsDisplay.setDirections(JSON.parse(data.route));
+	waypoints_array = new Array();
+	$.each(data.route.Sb.waypoints,function(index,value) {
+		waypoints_array.push({location: value.location.lb +','+ value.location.mb});
+	});
+	var request = {
+			origin:data.route.Sb.origin.lb + ',' + data.route.Sb.origin.mb,
+			destination:data.route.Sb.destination.lb + ',' + data.route.Sb.destination.mb,
+			waypoints: waypoints_array,
+			travelMode: google.maps.DirectionsTravelMode.DRIVING
+	};
+	directionsService.route(request, function(response, status) {
+		console.log(response);
+		if (status == google.maps.DirectionsStatus.OK) {
+			console.log(response);
+			route_object = response;
+			console.log(route_object);
+			directionsDisplay.setDirections(response);
+			/*$('#route-panel').append("<div class='button' id='broadcast_route'>Broadcast route</div>")
+			$('#broadcast_route').click(function(){
+				socket.emit('broadcast_route',{rack_id: rack_id, route: route_object});
+			});*/
+			//return route_object;
+		}
+	});
+	//route_object = JSON.parse(data.route);
+});
+

@@ -81,6 +81,12 @@ io.sockets.on('connection', function (socket) {
 			value.emit('new_pin',{pos: data.pos, rack_id: socket.rack_id});
 		});
 	});
+	socket.on('broadcast_route',function(data){
+		console.log("Received broadcast_route from: " + rack_id);
+		connected.forEach(function(value) {						
+			value.emit('new_route',{route: data.route, rack_id: data.rack_id});
+		});
+	});
 	socket.on('report', function(data) {
 		socket = connected.get(data.rack_id);
 		socket.emit('new_pin',{pos: data.pos, rack_id: socket.rack_id});
