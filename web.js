@@ -56,15 +56,10 @@ io.sockets.on('connection', function (socket) {
 	socket.emit('init_msg', {rack_id: socket.rack_id });	
 	if(!connected.has(rack_id)) {
 		connected.set(rack_id,socket);
+		socket.set('rack_id',rack_id);
 	}
 	// Broadcast new user online
 	connected.forEach(function(value) {
-		//console.log(JSON.stringfy(connected));
-		
-		// Hack to emit new user to everyone
-		/*connected.forEach(function(value_in) {
-			value.emit('new_user',{value_in: rack_id});
-		})*/
 		console.log("Here " + connected.size);
 		
 		connected.forEach(function(value_in,key) {
@@ -76,26 +71,32 @@ io.sockets.on('connection', function (socket) {
 	
 	// Handlers
 	socket.on('broadcast',function(data) {
-		console.log('Connected size: ' + connected.size);
-		connected.forEach(function(value) {						
-			value.emit('new_pin',{pos: data.pos, rack_id: socket.rack_id});
-		});
+		socket.broadcast.emit('new_pin',{pos: data.pos, rack_id: socket.rack_id});
 	});
 	socket.on('broadcast_route',function(data){
 		console.log("Received broadcast_route from: " + rack_id);
-		connected.forEach(function(value) {						
-			value.emit('new_route',{route: data.route, rack_id: data.rack_id});
-		});
+		//connected.forEach(function(value) {						
+			socket.broadcast.emit('new_route',{route: data.route, rack_id: data.rack_id});
+		//});
 	});
 	socket.on('report', function(data) {
 		socket = connected.get(data.rack_id);
 		socket.emit('new_pin',{pos: data.pos, rack_id: socket.rack_id});
 	});	
+	socket.on('request_location',function(data) {
+		console.log("Received a request from " + socket.rack_id + " for position of " + data.rack_id);
+		//socket.emit('server_request_location',{})
+		_requested = connected.get(data.rack_id);
+		_requested.emit('server_request_location','tobi',function(result) {			
+			socket.emit('new_pin',{pos: result, rack_id: data.rack_id});
+		});
+	});
+	
 	socket.on('disconnect', function(data) {
-		connected.forEach(function(value) {						
-			value.emit('remove_pin',{rack_id : socket.rack_id});
-			value.emit('remove_user',{rack_id : socket.rack_id});
-		});		
+		//connected.forEach(function(value) {						
+			socket.broadcast.emit('remove_pin',{rack_id : socket.rack_id});
+			socket.broadcast.emit('remove_user',{rack_id : socket.rack_id});
+		//});		
 		connected.delete(socket.rack_id);
 	});
 

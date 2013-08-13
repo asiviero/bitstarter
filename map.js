@@ -44,6 +44,7 @@ socket.on('init_msg', function (data) {
 //to this user map or update a pin's position. data will consist of the desired
 //pin's rack_id and its new location as latitude and longitude 
 socket.on('new_pin',function(data) {
+	console.log("New pin from user: " + data.rack_id);
 	var latitude = data.pos.coords.latitude;
 	var longitude = data.pos.coords.longitude;
 	// Focus on new pin
@@ -73,10 +74,13 @@ socket.on('new_user',function (data) {
 	$('#currently-online-list').html("");
 	var _list = "";
 	for (rack_id in connected) {
-		_list += "<li>" + rack_id + "</li>";		
+		_list += "<li><span class='glyphicon glyphicon-question-sign request-location'></span><div class='rack_id'>" + rack_id + "</div></li>";		
 	}
 	$('#currently-online-list').html(_list);
-
+	$('.request-location').click(function(){
+		_rack_id = $(this).parent().find('.rack_id').text();
+		socket.emit('request_location',{rack_id: _rack_id});
+	});	
 });
 
 socket.on('remove_user',function(data) {
@@ -113,6 +117,18 @@ socket.on('remove_pin',function(data) {
 	}
 });
 
+
+socket.on('server_request_location', function (name, fn) {
+	if(navigator.geolocation){
+		// timeout at 60000 milliseconds (60 seconds)
+		var options = {timeout:60000};
+		navigator.geolocation.getCurrentPosition(fn, 
+				errorHandler,
+				options);
+	}else{
+		alert("Sorry, browser does not support geolocation!");
+	}
+});
 
 function errorHandler(err) {
 	if(err.code == 1) {
