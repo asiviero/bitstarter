@@ -36,8 +36,14 @@ var socket = io.connect('http://'+document.domain+port);
 socket.on('init_msg', function (data) {
 	// Init msg is a set up event, it will set this user rack_id and then, initialize
 	// the map. More details on initialize later
-	rack_id = data.rack_id;	
+	//rack_id = data.rack_id;	
 	initialize();
+	if(register_rack_id_in_session(data.rack_id)) {
+		rack_id = data.rack_id;
+	} else {
+		rack_id = Session.getVar('rack_id');
+	};
+	console.log("Rack id: " + rack_id);
 });
 
 //When the server sends a 'new_pin' message, it wants to either insert a new pin
@@ -45,6 +51,7 @@ socket.on('init_msg', function (data) {
 //pin's rack_id and its new location as latitude and longitude 
 socket.on('new_pin',function(data) {
 	console.log("New pin from user: " + data.rack_id);
+	
 	var latitude = data.pos.coords.latitude;
 	var longitude = data.pos.coords.longitude;
 	// Focus on new pin
@@ -81,6 +88,7 @@ socket.on('new_user',function (data) {
 		_rack_id = $(this).parent().find('.rack_id').text();
 		socket.emit('request_location',{rack_id: _rack_id});
 	});	
+	//register_rack_id_in_session(rack_id)
 });
 
 socket.on('remove_user',function(data) {
@@ -411,3 +419,16 @@ socket.on('new_route',function(data){
 	//route_object = JSON.parse(data.route);
 });
 
+/*
+ * Session related code
+ */
+function register_rack_id_in_session(rack_id) {
+	if(!Session.getVar('rack_id')) {
+		Session.setVar('rack_id',rack_id);
+		return true;
+	} else {
+		console.log("Need to fix");
+		socket.emit('fix_rack_id',{rack_id: Session.getVar('rack_id')});
+		return false;
+	}
+}

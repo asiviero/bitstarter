@@ -91,6 +91,12 @@ io.sockets.on('connection', function (socket) {
 			socket.emit('new_pin',{pos: result, rack_id: data.rack_id});
 		});
 	});
+	socket.on('fix_rack_id', function(data) {
+		console.log("Received a fix from " + socket.rack_id + " to " + data.rack_id);
+		connected.set(data.rack_id,socket);
+		socket.rack_id = data.rack_id;
+		console.log("Received a fix from " + socket.rack_id + " to " + data.rack_id);
+	});
 	
 	socket.on('disconnect', function(data) {
 		//connected.forEach(function(value) {						
