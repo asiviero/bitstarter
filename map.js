@@ -17,6 +17,8 @@ var connected = {};
 //by the server
 var rack_id;
 
+var distance_to_waypoints;
+
 //Setting up the socket connection, this has a bit of hacky feeling since I could
 //not manage to deploy to Heroku and Amazon EC2 without code modification on which
 //port to connect, which would be unsuitable. If you find a good way to do this, 
@@ -154,6 +156,7 @@ var broadcast_function = function sendLocation(position) {
 //Reports its current position to the server. Server currently responds
 //with a new_pin message
 var report_function = function reportLocation(position) {
+	console.log(position);
 	socket.emit('report',{rack_id: rack_id, pos: position});
 };
 
@@ -287,6 +290,7 @@ function _set_up_drag_events(index) {
 function _set_up_click_listeners(index) {
 	google.maps.event.addListenerOnce(map,"click",function(event) {
 		google.maps.event.clearListeners(map, 'click');
+		console.log(map);
 		$('#route-status-msg').text("");
 		if(event.latLng) {
 			/*_event = event.latLng;
@@ -413,6 +417,7 @@ socket.on('new_route',function(data){
 			route_object = response;
 			//console.log(route_object);
 			directionsDisplay.setDirections(response);
+			distance_to_waypoints = new Array(route_object.Tb.waypoints.length);
 			/*$('#route-panel').append("<div class='button' id='broadcast_route'>Broadcast route</div>")
 			$('#broadcast_route').click(function(){
 				socket.emit('broadcast_route',{rack_id: rack_id, route: route_object});
@@ -422,7 +427,6 @@ socket.on('new_route',function(data){
 	});
 	//route_object = JSON.parse(data.route);
 });
-
 /*
  * Session related code
  */
@@ -434,5 +438,52 @@ function register_rack_id_in_session(rack_id) {
 		console.log("Need to fix");
 		socket.emit('fix_rack_id',{rack_id: Session.getVar('rack_id')});
 		return false;
+	}
+}
+
+function haversine_distance(LatLng1,LatLng2) {
+	if (typeof(Number.prototype.toRad) === "undefined") {
+		  Number.prototype.toRad = function() {
+		    return this * Math.PI / 180;
+		  };
+		}
+	
+	lat1 = LatLng1.lat();
+	lat2 = LatLng2.lat();
+	lon1 = LatLng1.lng();
+	lon2 = LatLng2.lng();
+	/*console.log(lat2);
+	console.log(lat1);*/
+	
+	var R = 6371; // km
+	var dLat = (lat2-lat1).toRad();
+	var dLon = (lon2-lon1).toRad();
+	var lat1 = lat1.toRad();
+	var lat2 = lat2.toRad();
+
+	//console.log(dLat + " " + dLon);
+	var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+	        Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2); 
+	var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+	var d = R * c;
+	console.log(d);
+	return d;
+}
+
+function calculate_distance_to_waypoint(index) {
+	if(navigator.geolocation){
+		// timeout at 60000 milliseconds (60 seconds)
+		var options = {timeout:60000};
+		navigator.geolocation.getCurrentPosition(function(pos) {
+			console.log(pos);
+			current_pos = new google.maps.LatLng(pos.coords.latitude,pos.coords.longitude);
+			waypoint_latlng = route_object.Tb.waypoints[index].location.split(',');
+			waypoint_pos = new google.maps.LatLng(waypoint_latlng[0],waypoint_latlng[1]);
+			distance_to_waypoints[index] = haversine_distance(current_pos, waypoint_pos);
+		}, 
+				errorHandler,
+				options);
+	}else{
+		alert("Sorry, browser does not support geolocation!");
 	}
 }
