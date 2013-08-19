@@ -289,9 +289,10 @@ function _set_up_click_listeners(index) {
 		google.maps.event.clearListeners(map, 'click');
 		$('#route-status-msg').text("");
 		if(event.latLng) {
-			
-			var lat = event.latLng.lb;	
-			var lng = event.latLng.mb;										
+			/*_event = event.latLng;
+			console.log(event.latLng);*/
+			var lat = event.latLng.lat();	
+			var lng = event.latLng.lng();										
 			var marker = new google.maps.Marker({
 				position: new google.maps.LatLng(lat,lng),
 				draggable: true,
@@ -352,8 +353,8 @@ function ask_google_for_route() {
 	//var route_object = {};
 	var start = route_markers[0].position;
 	var end = route_markers[route_markers.length-1].position;
-	console.log(start);
-	console.log(end);
+	/*console.log(start);
+	console.log(end);*/
 	directionsDisplay.setMap(map);
 
 	var waypoints_array = new Array();
@@ -372,7 +373,7 @@ function ask_google_for_route() {
 		if (status == google.maps.DirectionsStatus.OK) {
 			console.log(response);
 			route_object = response;
-			console.log(route_object);
+			//console.log(route_object);
 			directionsDisplay.setDirections(response);
 			$('#route-panel').append("<div class='button' id='broadcast_route'>Broadcast route</div>")
 			$('#broadcast_route').click(function(){
@@ -393,21 +394,24 @@ socket.on('new_route',function(data){
 	directionsDisplay.setMap(map);
 	//directionsDisplay.setDirections(JSON.parse(data.route));
 	waypoints_array = new Array();
-	$.each(data.route.Sb.waypoints,function(index,value) {
-		waypoints_array.push({location: value.location.lb +','+ value.location.mb});
-	});
+	console.log(data.route);
+	if(data.route.Tb.waypoints) {
+		$.each(data.route.Tb.waypoints,function(index,value) {
+			waypoints_array.push({location: value.location.mb +','+ value.location.nb});
+		});
+	}
 	var request = {
-			origin:data.route.Sb.origin.lb + ',' + data.route.Sb.origin.mb,
-			destination:data.route.Sb.destination.lb + ',' + data.route.Sb.destination.mb,
+			origin:data.route.Tb.origin.mb + ',' + data.route.Tb.origin.nb,
+			destination:data.route.Tb.destination.mb + ',' + data.route.Tb.destination.nb,
 			waypoints: waypoints_array,
 			travelMode: google.maps.DirectionsTravelMode.DRIVING
 	};
 	directionsService.route(request, function(response, status) {
-		console.log(response);
+		//console.log(response);
 		if (status == google.maps.DirectionsStatus.OK) {
-			console.log(response);
+			//console.log(response);
 			route_object = response;
-			console.log(route_object);
+			//console.log(route_object);
 			directionsDisplay.setDirections(response);
 			/*$('#route-panel').append("<div class='button' id='broadcast_route'>Broadcast route</div>")
 			$('#broadcast_route').click(function(){
