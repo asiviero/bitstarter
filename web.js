@@ -60,10 +60,10 @@ io.sockets.on('connection', function (socket) {
 	}
 	// Broadcast new user online
 	connected.forEach(function(value) {
-		console.log("Here " + connected.size);
-		
+		console.log("Here " + connected.size);		
 		connected.forEach(function(value_in,key) {
 			value.emit('new_user',{rack_id: key});
+			value.emit('user_list',{list: connected});
 		});
 	});
 	
@@ -95,8 +95,12 @@ io.sockets.on('connection', function (socket) {
 		console.log("Received a fix from " + socket.rack_id + " to " + data.rack_id);
 		connected.delete(socket.rack_id);
 		connected.set(data.rack_id,socket);
+		socket.emit('remove_user',{rack_id : socket.rack_id});
+		socket.broadcast.emit('remove_user',{rack_id : socket.rack_id});
 		socket.rack_id = data.rack_id;
-		console.log("Received a fix from " + socket.rack_id + " to " + data.rack_id);
+		console.log("Received a fix from " + socket.rack_id + " to " + data.rack_id);		
+		socket.emit('new_user',{rack_id: data.rack_id});
+		
 	});
 	
 	socket.on('share_route_with_user', function(data) {

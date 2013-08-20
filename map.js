@@ -509,3 +509,8 @@ function calculate_distance_to_waypoint(index) {
 	d = calculate_distance_to_waypoint(0);
 	console.log("d: " + d);
 }*/
+
+socket.on('user_list', function(data) {
+	console.log(data);
+	
+});
