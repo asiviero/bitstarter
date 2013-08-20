@@ -18,6 +18,7 @@ var connected = {};
 var rack_id;
 
 var distance_to_waypoints;
+var currently_on_index = 0;
 
 //Setting up the socket connection, this has a bit of hacky feeling since I could
 //not manage to deploy to Heroku and Amazon EC2 without code modification on which
@@ -39,13 +40,15 @@ socket.on('init_msg', function (data) {
 	// Init msg is a set up event, it will set this user rack_id and then, initialize
 	// the map. More details on initialize later
 	//rack_id = data.rack_id;	
-	initialize();
+	
 	if(register_rack_id_in_session(data.rack_id)) {
 		rack_id = data.rack_id;
 	} else {
 		rack_id = Session.getVar('rack_id');
 	};
 	console.log("Rack id: " + rack_id);
+	console.log("Rack id: " + Session.getVar('rack_id'));
+	initialize();
 });
 
 //When the server sends a 'new_pin' message, it wants to either insert a new pin
@@ -83,13 +86,14 @@ socket.on('new_user',function (data) {
 	$('#currently-online-list').html("");
 	var _list = "";
 	for (rack_id in connected) {
-		_list += "<li><span class='glyphicon glyphicon-question-sign request-location'></span><div class='rack_id'>" + rack_id + "</div></li>";		
+		_list += "<li><span class='glyphicon glyphicon-question-sign request-location'></span><i class='icon-large icon-bullhorn share-route-with-user'></i><div class='rack_id'>" + rack_id + "</div></li>";		
 	}
 	$('#currently-online-list').html(_list);
 	$('.request-location').click(function(){
 		_rack_id = $(this).parent().find('.rack_id').text();
 		socket.emit('request_location',{rack_id: _rack_id});
 	});	
+	_set_share_route_listeners();
 	//register_rack_id_in_session(rack_id)
 });
 
@@ -132,7 +136,9 @@ socket.on('server_request_location', function (name, fn) {
 	if(navigator.geolocation){
 		// timeout at 60000 milliseconds (60 seconds)
 		var options = {timeout:60000};
-		navigator.geolocation.getCurrentPosition(fn, 
+		navigator.geolocation.getCurrentPosition(function(pos) {
+			fn(pos);
+		}, 
 				errorHandler,
 				options);
 	}else{
@@ -156,8 +162,8 @@ var broadcast_function = function sendLocation(position) {
 //Reports its current position to the server. Server currently responds
 //with a new_pin message
 var report_function = function reportLocation(position) {
-	console.log(position);
-	socket.emit('report',{rack_id: rack_id, pos: position});
+	console.log(Session.getVar('rack_id'));
+	socket.emit('report',{rack_id: Session.getVar('rack_id'), pos: position});
 };
 
 //An enum to make it easiear to shareLocation
@@ -309,6 +315,17 @@ function _set_up_click_listeners(index) {
 	});
 }
 
+function _set_share_route_listeners() {
+	$('.share-route-with-user').click(function() {
+		var index = $(this).parent().index() - 1;			
+		console.log(index);
+		console.log("I am user: " + Session.getVar('rack_id'));
+		var destiny = $(this).parent().find('.rack_id').text();
+		console.log($(this).parent().find('.rack_id').text());
+		socket.emit('share_route_with_user',{route: route_object, origin_rack: Session.getVar('rack_id'), destination_rack: destiny});
+	});
+}
+
 function _set_plus_sign_listeners() {
 	$('.route-pin-block .glyphicon-plus-sign').click(function() {
 		var index = $(this).parent().index() - 1;			
@@ -381,7 +398,7 @@ function ask_google_for_route() {
 			directionsDisplay.setDirections(response);
 			$('#route-panel').append("<div class='button' id='broadcast_route'>Broadcast route</div>")
 			$('#broadcast_route').click(function(){
-				socket.emit('broadcast_route',{rack_id: rack_id, route: route_object});
+				socket.emit('broadcast_route',{rack_id: Session.getVar('rack_id'), route: route_object});
 			});
 			//return route_object;
 		}
@@ -431,7 +448,7 @@ socket.on('new_route',function(data){
  * Session related code
  */
 function register_rack_id_in_session(rack_id) {
-	if(!Session.getVar('rack_id')) {
+	if(!Session.getVar('rack_id') || Session.getVar('rack_id') == rack_id) {
 		Session.setVar('rack_id',rack_id);
 		return true;
 	} else {
@@ -487,3 +504,8 @@ function calculate_distance_to_waypoint(index) {
 		alert("Sorry, browser does not support geolocation!");
 	}
 }
+
+/*function _test_function() {
+	d = calculate_distance_to_waypoint(0);
+	console.log("d: " + d);
+}*/

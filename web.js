@@ -93,11 +93,17 @@ io.sockets.on('connection', function (socket) {
 	});
 	socket.on('fix_rack_id', function(data) {
 		console.log("Received a fix from " + socket.rack_id + " to " + data.rack_id);
+		connected.delete(socket.rack_id);
 		connected.set(data.rack_id,socket);
 		socket.rack_id = data.rack_id;
 		console.log("Received a fix from " + socket.rack_id + " to " + data.rack_id);
 	});
 	
+	socket.on('share_route_with_user', function(data) {
+		console.log("\n\nUser: " + data.origin_rack + " wants to share data with \n\n" + data.destination_rack);
+		_requested = connected.get(data.destination_rack);
+		_requested.emit('new_route',{route: data.route, rack_id: data.origin_rack});
+	});
 	socket.on('disconnect', function(data) {
 		//connected.forEach(function(value) {						
 			socket.broadcast.emit('remove_pin',{rack_id : socket.rack_id});
