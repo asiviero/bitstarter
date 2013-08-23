@@ -15,6 +15,7 @@ var dict = require('dict');
 
 // A dictionary to keep track of users
 var connected = new dict();
+var route_shared = new dict();
 
 var app = require('http').createServer(handler)
 , io = require('socket.io').listen(app)
@@ -55,6 +56,8 @@ io.sockets.on('connection', function (socket) {
 	socket.rack_id = rack_id;
 	socket.emit('init_msg', {rack_id: socket.rack_id });	
 	if(!connected.has(rack_id)) {
+		route_shared.set(rack_id,new Array());
+		console.log("Route shared: " + rack_id + " " + route_shared.get(rack_id));
 		connected.set(rack_id,socket);
 		socket.set('rack_id',rack_id);
 	}
@@ -66,6 +69,8 @@ io.sockets.on('connection', function (socket) {
 			value.emit('user_list',{list: connected});
 		});
 	});
+	
+	
 	
 	//socket.emit('update_user_list',{conn: connected});
 	
@@ -100,6 +105,9 @@ io.sockets.on('connection', function (socket) {
 		socket.rack_id = data.rack_id;
 		console.log("Received a fix from " + socket.rack_id + " to " + data.rack_id);		
 		socket.emit('new_user',{rack_id: data.rack_id});
+		socket.broadcast.emit('new_user',{rack_id: data.rack_id});
+		
+		route_shared.set(data.rack_id,route_shared.get(socket.rack_id));
 		
 	});
 	
@@ -107,7 +115,29 @@ io.sockets.on('connection', function (socket) {
 		console.log("\n\nUser: " + data.origin_rack + " wants to share data with \n\n" + data.destination_rack);
 		_requested = connected.get(data.destination_rack);
 		_requested.emit('new_route',{route: data.route, rack_id: data.origin_rack});
+		console.log(route_shared.has(data.origin_rack));
+		if(route_shared.has(data.origin_rack) && route_shared.get(data.origin_rack) !== undefined) {
+			_array = route_shared.get(data.origin_rack);
+			if(_array.indexOf(data.origin_rack) != -1) {
+				_array.push(data.destination_rack);			
+			}
+		} 
+		else {
+			_array = [data.destination_rack];			
+		}
+		route_shared.set(data.origin_rack,_array);
 	});
+	
+	socket.on('reached_waypoint',function(data) {
+		console.log("User " + data.rack_id + " has reached a waypoint\n\n");
+		console.log(route_shared.get(data.rack_id));
+		route_shared.get(data.rack_id).forEach(function(value){
+			_requested = connected.get(value);
+			_requested.emit('new_pin', {pos: data.position, rack_id: value});
+			_requested.emit('user_reached_waypoint',{rack_id: data.rack_id, index: data.waypoint});
+		});
+	});
+	
 	socket.on('disconnect', function(data) {
 		//connected.forEach(function(value) {						
 			socket.broadcast.emit('remove_pin',{rack_id : socket.rack_id});

@@ -17,9 +17,9 @@ var connected = {};
 //by the server
 var rack_id;
 
-var distance_to_waypoints;
+var distance_to_waypoints = [];
 var currently_on_index = 0;
-
+var interval_id;
 //Setting up the socket connection, this has a bit of hacky feeling since I could
 //not manage to deploy to Heroku and Amazon EC2 without code modification on which
 //port to connect, which would be unsuitable. If you find a good way to do this, 
@@ -217,7 +217,6 @@ $(document).ready(function() {
 		"<div class='route-pin-block'>Destination: <span class='route-pin-location'></span> <span class='glyphicon glyphicon-flag'></span><span class='glyphicon glyphicon-plus-sign'></span></div>" +
 		"<div class='button' id='add-checkpoint-button'>Add Checkpoint</div>" +
 		"<div class='button' id='ask-google-for-route'>Ask Google</div>" +		
-		"<div id='route-status-msg'></div>" +		
 		"</div>";
 		$('#new-route-panel').html(route_block);
 		
@@ -396,6 +395,9 @@ function ask_google_for_route() {
 			route_object = response;
 			//console.log(route_object);
 			directionsDisplay.setDirections(response);
+			interval_id = setInterval(function() {
+				calculate_distance_to_waypoint(currently_on_index);
+			}, 5000);
 			$('#route-panel').append("<div class='button' id='broadcast_route'>Broadcast route</div>")
 			$('#broadcast_route').click(function(){
 				socket.emit('broadcast_route',{rack_id: Session.getVar('rack_id'), route: route_object});
@@ -488,15 +490,24 @@ function haversine_distance(LatLng1,LatLng2) {
 }
 
 function calculate_distance_to_waypoint(index) {
+	if(currently_on_index >= route_object.Tb.waypoints.length) {
+		clearInterval(interval_id);
+		return;		
+	}
 	if(navigator.geolocation){
 		// timeout at 60000 milliseconds (60 seconds)
 		var options = {timeout:60000};
 		navigator.geolocation.getCurrentPosition(function(pos) {
 			console.log(pos);
 			current_pos = new google.maps.LatLng(pos.coords.latitude,pos.coords.longitude);
-			waypoint_latlng = route_object.Tb.waypoints[index].location.split(',');
-			waypoint_pos = new google.maps.LatLng(waypoint_latlng[0],waypoint_latlng[1]);
+			//waypoint_latlng = route_object.Tb.waypoints[index].location.split(',');
+			waypoint_pos = route_object.Tb.waypoints[index].location;
 			distance_to_waypoints[index] = haversine_distance(current_pos, waypoint_pos);
+			if(distance_to_waypoints[index] < 0.5) {
+				console.log("I'm 500m away from checkpoint: " + index);
+				socket.emit('reached_waypoint',{rack_id: Session.getVar("rack_id"), position: pos, waypoint: index});
+				currently_on_index++;
+			}
 		}, 
 				errorHandler,
 				options);
@@ -511,6 +522,10 @@ function calculate_distance_to_waypoint(index) {
 }*/
 
 socket.on('user_list', function(data) {
-	console.log(data);
-	
+	console.log(data);	
+});
+
+socket.on('user_reached_waypoint', function(data) {
+	console.log("User " + data.rack_id + " reached waypoint " + data.index);
+	$('#route-status-msg').text("User " + data.rack_id + " reached waypoint " + data.index);
 });
